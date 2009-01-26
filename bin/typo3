@@ -2,9 +2,12 @@
  
 require "fileutils"
 require "rubygems"
+require "rake"
+require "mysql"
 require "thor"
 require "open-uri"
 require "yaml"
+require "typo3"
  
 class TYPO3Installer < Thor
 
@@ -13,10 +16,30 @@ class TYPO3Installer < Thor
     
   end
   
+  desc "config", "show current site config"
+  def config
+    if current_directory_is_typo3_install?
+      t3site = Typo3.new
+      t3site.show_config
+    else
+      abort 'Not a TYPO3 Installation'
+    end
+  end
+  
   private
+  def current_directory_is_typo3_install?
+    local_typo3_structure = ["fileadmin","typo3conf","typo3temp","uploads"]
+    if (Dir.glob('*').find_all {|f| local_typo3_structure.include?(f) }).size == 4
+      true
+    else
+      false
+    end
+  end
+  
   def typo3_locations
-    { :official   => 'http://sourceforge.net/project/showfiles.php?group_id=20391&package_id=14557',
-      :local      => '/usr/local/typo3/',
+    { :official       => 'http://sourceforge.net/project/showfiles.php?group_id=20391&package_id=14557',
+      :heanet_mirror  => 'http://heanet.dl.sourceforge.net/sourceforge/typo3/',
+      :local          => '/usr/local/typo3/',
     }
   end
     
