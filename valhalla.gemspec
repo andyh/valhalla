@@ -7,9 +7,11 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Andy Henson"]
   s.date = %q{2009-01-26}
+  s.default_executable = %q{typo3}
   s.description = %q{A collection of tasks for automating TYPO3}
   s.email = %q{andy@foxsoft.co.uk}
-  s.files = ["README.textile", "VERSION.yml", "bin/typo3"]
+  s.executables = ["typo3"]
+  s.files = ["bin/typo3"]
   s.has_rdoc = true
   s.homepage = %q{http://github.com/andyh/valhalla}
   s.rdoc_options = ["--inline-source", "--charset=UTF-8"]

@@ -12,6 +12,8 @@ begin
     s.homepage = "http://github.com/andyh/valhalla"
     s.description = "A collection of tasks for automating TYPO3"
     s.authors = ["Andy Henson"]
+    s.default_executable = %q{typo3}
+    s.executables = ["typo3"]
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
