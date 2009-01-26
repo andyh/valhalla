@@ -1,0 +1,1 @@
+A collection of Thor tasks for automating TYPO3

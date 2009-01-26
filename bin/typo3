@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+ 
+require "fileutils"
+require "rubygems"
+require "thor"
+require "open-uri"
+require "yaml"
+ 
+class TYPO3Installer < Thor
+
+  desc "install [VERSION]", "install a version of TYPO3"
+  def install(version = 'latest')
+    
+  end
+  
+  private
+  def typo3_locations
+    { :official   => 'http://sourceforge.net/project/showfiles.php?group_id=20391&package_id=14557',
+      :local      => '/usr/local/typo3/',
+    }
+  end
+    
+end
+ 
+ 
+TYPO3Installer.start
