@@ -11,9 +11,11 @@ require "/Users/andy/rubydev/valhalla/lib/typo3"
  
 class TYPO3Installer < Thor
 
-  desc "install [VERSION]", "install a version of TYPO3"
+  desc "install [VERSION]", "install latest version of TYPO3, optionally select a specific version to install"
+  method_options :version => :optional
   def install(version = 'latest')
-    
+    scrape_typo3_source
+    `curl #{typo3_locations[:heanet_mirror]}#{@dummy_list.last[0]} > #{@dummy_list.last[0]}`
   end
   
   desc "config", "show current site config"
@@ -35,6 +37,16 @@ class TYPO3Installer < Thor
   end
   
   private
+  
+  def scrape_typo3_source
+    scraped_content = open(typo3_locations[:heanet_mirror]).read
+    @dummy_list, @source_list = Hash.new, Hash.new
+    
+    scraped_content.scan(/.*(dummy-\d\.\d\.\d\.tar\.gz).*(\d\d\-[A-Z][a-z][a-z]\-\d\d\d\d).*/) {|name,mod_date| @dummy_list[name] = mod_date }    
+    scraped_content.scan(/.*(typo3_src-\d\.\d\.\d\.tar\.gz).*(\d\d\-[A-Z][a-z][a-z]\-\d\d\d\d).*/) {|name,mod_date| @source_list[name] = mod_date }
+    @dummy_list = @dummy_list.sort_by {|f| f }
+    @source_list = @source_list.sort_by {|f| f }
+  end
   def current_directory_is_typo3_install?
     local_typo3_structure = ["fileadmin","typo3conf","typo3temp","uploads"]
     if (Dir.glob('*').find_all {|f| local_typo3_structure.include?(f) }).size == 4
