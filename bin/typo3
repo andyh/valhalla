@@ -7,7 +7,7 @@ require "mysql"
 require "thor"
 require "open-uri"
 require "yaml"
-require "typo3"
+require "/Users/andy/rubydev/valhalla/lib/typo3"
  
 class TYPO3Installer < Thor
 
@@ -23,6 +23,14 @@ class TYPO3Installer < Thor
       t3site.show_config
     else
       abort 'Not a TYPO3 Installation'
+    end
+  end
+  
+  desc "clearcache [type]","clear the TYPO3 caches, specify either 'all', 'page' or 'temp'. If none are supplied it defaults to 'all'"
+  def clearcache(type = "all")  
+    if current_directory_is_typo3_install? && ["all","page","temp"].include?(type)
+      t3site = Typo3.new
+      t3site.clear_cache(type)
     end
   end
   

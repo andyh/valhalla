@@ -33,7 +33,37 @@ class Typo3
     end
   end
 
+  def clear_cache(type)
+    case type.to_sym
+    when :all
+      clear_pages
+      clear_temp
+      puts "Cleared All"
+    when :page
+      clear_pages
+      puts "Cleared Pages"
+    when :temp
+      clear_temp
+      puts "Cleared Temp"
+    end
+    
+  end
+  
   private
+  
+  def clear_pages
+    self.with_db do |db|
+      db.query('delete from cache_pagesection')
+      db.query('delete from cache_hash')
+    end
+  end
+  
+  def clear_temp
+    temp = FileList['**/temp_CACHED*.php']
+    puts "hi"
+    rm temp
+  end
+  
   def get_TYPO3_details
     localconf = FileList['**/localconf.php']
 
