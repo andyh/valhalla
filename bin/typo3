@@ -8,14 +8,27 @@ require "thor"
 require "open-uri"
 require "yaml"
 require "/Users/andy/rubydev/valhalla/lib/typo3"
+
+CONFIG[:webuser_group] = "_www"
  
 class TYPO3Installer < Thor
 
   desc "install [VERSION]", "install latest version of TYPO3, optionally select a specific version to install"
-  method_options :version => :optional
+  method_options :version => :optional, :nosource => true, :nodummy => true
   def install(version = 'latest')
+    # TODO enable specifying versions other than automatically getting latest
     scrape_typo3_source
-    `curl #{typo3_locations[:heanet_mirror]}#{@dummy_list.last[0]} > #{@dummy_list.last[0]}`
+
+    unless options.nosource?
+      install_latest_source
+    end
+
+    unless options.nodummy?
+      install_latest_dummy
+    end
+    
+    configure_localconf
+    setup_database
   end
   
   desc "config", "show current site config"
@@ -38,6 +51,39 @@ class TYPO3Installer < Thor
   
   private
   
+  def configure_localconf
+    # TODO
+  end
+  
+  def setup_database
+    # TODO
+  end
+  
+  def install_latest_dummy
+    latest_dummy  = @dummy_list.last[0]
+    `curl #{typo3_locations[:heanet_mirror]}#{latest_dummy} > #{latest_dummy}`
+    `tar -zxvf #{latest_dummy} && mv #{latest_dummy.sub(".tar.gz","")} src && rm #{latest_dummy}`
+    `rm src/typo3_src`
+    `ln -s /usr/local/typo3/latest src/typo3_src`
+    `sudo chgrp -R #{CONFIG[:webuser_group]} src/fileadmin src/uploads src/typo3conf src/typo3temp`
+    `sudo chmod -R 775 src/fileadmin src/uploads src/typo3conf src/typo3temp`
+    `rm src/INSTALL.txt src/README.txt src/RELEASE_NOTES.txt`    
+  end
+
+  def install_latest_source
+    latest_source = @source_list.last[0]
+    usr_local = typo3_locations[:local]
+    unless File.exist?(usr_local+latest_source.sub(".tar.gz",""))
+      `curl #{typo3_locations[:heanet_mirror]}#{latest_source} > #{latest_source}`
+      `tar -zxvf #{latest_source}`
+      puts "Enter your (sudo) admin password when prompted"
+      `sudo mv #{latest_source.sub(".tar.gz","")} #{usr_local} && rm #{latest_source}`
+      `sudo ln -s /usr/local/typo3/#{latest_source.sub(".tar.gz","")} /usr/local/typo3/latest`
+      `sudo chgrp -R #{CONFIG[:webuser_group]} typo3/ext/`
+      `sudo chmod -R 775 typo3/ext/`
+    end    
+  end
+  
   def scrape_typo3_source
     scraped_content = open(typo3_locations[:heanet_mirror]).read
     @dummy_list, @source_list = Hash.new, Hash.new
@@ -47,6 +93,7 @@ class TYPO3Installer < Thor
     @dummy_list = @dummy_list.sort_by {|f| f }
     @source_list = @source_list.sort_by {|f| f }
   end
+  
   def current_directory_is_typo3_install?
     local_typo3_structure = ["fileadmin","typo3conf","typo3temp","uploads"]
     if (Dir.glob('*').find_all {|f| local_typo3_structure.include?(f) }).size == 4
