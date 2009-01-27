@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
- 
+
+require "digest/md5" 
 require "fileutils"
 require "rubygems"
 require "rake"
@@ -9,26 +10,35 @@ require "open-uri"
 require "yaml"
 require "/Users/andy/rubydev/valhalla/lib/typo3"
 
-CONFIG[:webuser_group] = "_www"
+CONFIG = {
+  :webuser_group  => "_www",
+}
+
  
 class TYPO3Installer < Thor
 
   desc "install [VERSION]", "install latest version of TYPO3, optionally select a specific version to install"
-  method_options :version => :optional, :nosource => true, :nodummy => true
+  method_options :version => :optional, :nosource => true, :nodummy => true, :dryrun => true
   def install(version = 'latest')
-    # TODO enable specifying versions other than automatically getting latest
-    scrape_typo3_source
+    new_site = Typo3Site.new
+        
+    unless options.dryrun?
+      # TODO enable specifying versions other than automatically getting latest
+      scrape_typo3_source
 
-    unless options.nosource?
-      install_latest_source
-    end
+      unless options.nosource?
+        install_latest_source
+      end
 
-    unless options.nodummy?
-      install_latest_dummy
+      unless options.nodummy?
+        install_latest_dummy
+        new_site.generate_localconf
+        new_site.setup_database
+      end
+    
     end
     
-    configure_localconf
-    setup_database
+    puts new_site.details
   end
   
   desc "config", "show current site config"
@@ -50,14 +60,6 @@ class TYPO3Installer < Thor
   end
   
   private
-  
-  def configure_localconf
-    # TODO
-  end
-  
-  def setup_database
-    # TODO
-  end
   
   def install_latest_dummy
     latest_dummy  = @dummy_list.last[0]
@@ -110,6 +112,109 @@ class TYPO3Installer < Thor
     }
   end
     
+end
+
+class Typo3Site
+  attr_accessor :sitename, :project
+  
+  def initialize
+    print "Project Codename:"
+    @project = STDIN.gets.chomp
+    
+    print "Enter Site Name:"
+    @sitename = STDIN.gets.chomp
+  end
+  
+  def username
+    "#{project}_typo3"
+  end
+  
+  def database
+    username
+  end
+  
+  def password
+    @password ||= generate_password(12)
+  end
+
+  def install_tool_password
+    @install_password ||= generate_password(12)
+  end
+  
+  def details
+    %{
+      Project: #{project} - #{sitename}
+      -------------------------------
+      Database:
+        Username: #{username}
+        Password: #{password}
+        Database: #{database}
+
+      Install Tool Password: #{install_tool_password} (#{Digest::MD5.hexdigest(self.install_tool_password)})
+    }
+  end
+  
+  def generate_localconf
+    File.open(Dir.getwd+"/src/typo3conf/localconf.php","w") do |f|
+      f.write localconf
+    end
+  end
+  
+  def setup_database
+    # TODO
+  end
+  
+  private
+  
+  def localconf
+<<-LC
+<?php
+$TYPO3_CONF_VARS['SYS']['sitename'] = '#{self.sitename}';
+
+	// Default password is "joh316" :
+$TYPO3_CONF_VARS['BE']['installToolPassword'] = 'bacb98acf97e0b6112b1d1b650b84971';
+$TYPO3_CONF_VARS['BE']['installToolPassword'] = '#{Digest::MD5.hexdigest(self.install_tool_password)}';
+
+$typo_db_extTableDef_script = 'extTables.php';
+
+$typo_db_username = '#{self.username}';
+$typo_db_password = '#{self.password}';
+$typo_db = '#{self.database}';
+$typo_db_host = 'localhost';
+
+$TYPO3_CONF_VARS['SYS']['encryptionKey'] = '#{Digest::MD5.hexdigest(self.install_tool_password+self.username+self.password)}';
+
+## TODO make these more dynamic and templateable
+
+$TYPO3_CONF_VARS['EXT']['extList'] = 'tsconfig_help,context_help,extra_page_cm_options,impexp,sys_note,tstemplate,tstemplate_ceditor,tstemplate_info,tstemplate_objbrowser,tstemplate_analyzer,func_wizards,wizard_crpages,wizard_sortpages,lowlevel,install,belog,beuser,aboutmodules,setup,taskcenter,info_pagetsconfig,viewpage,rtehtmlarea,css_styled_content,t3skin';
+
+$TYPO3_CONF_VARS['SYS']['compat_version'] = '4.1';
+
+## ImageMagick/GraphicsMagick Configuration
+
+$TYPO3_CONF_VARS['GFX']['im_combine_filename'] = 'composite';
+$TYPO3_CONF_VARS['GFX']["im_path"] = '/usr/local/bin/';
+$TYPO3_CONF_VARS['GFX']['im_version_5'] = 'im5';
+$TYPO3_CONF_VARS['GFX']["im_path_lzw"] = '/usr/local/bin/';
+$TYPO3_CONF_VARS['GFX']['TTFdpi'] = '96';
+$TYPO3_CONF_VARS['SYS']['setMemoryLimit'] = '256';
+$TYPO3_CONF_VARS['GFX']['gdlib_2'] = '1';
+$TYPO3_CONF_VARS['GFX']['im_imvMaskState'] = '0';
+$TYPO3_CONF_VARS['GFX']['im_v5effects'] = '0';
+$TYPO3_CONF_VARS['GFX']['im_negate_mask'] = '1';
+$TYPO3_CONF_VARS['GFX']['im_no_effects'] = '0';
+
+
+## INSTALL SCRIPT EDIT POINT TOKEN - all lines after this points may be changed by the install script!
+
+?>
+LC
+    
+  end
+  def generate_password(size)
+    chars = (('a'..'z').to_a + ('0'..'9').to_a) - %w(i o 0 1 l 0)
+    (1..size).collect{|a| chars[rand(chars.size)] }.join
+  end
 end
  
  
