@@ -44,6 +44,7 @@ class TYPO3Installer < Thor
         install_latest_dummy
         new_site.generate_localconf
         new_site.setup_database
+        puts "Now run the Install Tool"
       end
     
     end
@@ -134,6 +135,8 @@ class Typo3Site
     
     print "Enter Site Name:"
     @sitename = STDIN.gets.chomp
+    
+    @extensions = %w{tsconfig_help context_help extra_page_cm_options impexp sys_note tstemplate tstemplate_ceditor tstemplate_info tstemplate_objbrowser tstemplate_analyzer func_wizards wizard_crpages wizard_sortpages lowlevel install belog beuser aboutmodules setup taskcenter info_pagetsconfig viewpage rtehtmlarea css_styled_content t3skin}
   end
   
   def username
@@ -173,8 +176,39 @@ class Typo3Site
   
   def setup_database
     # TODO
+    port = 3306
+    socket = `locate -l 1 mysql.sock`.to_s.strip
+    
+    dbh = Mysql.real_connect("localhost","root","","",port,socket)
+    dbh.query("create database #{self.database}")
+    dbh.query("GRANT ALL ON #{self.database}.* TO '#{self.username}'@'localhost'")
+    dbh.query("SET PASSWORD FOR '#{self.username}'@'localhost' = PASSWORD('#{self.password}')")
+    dbh.query("flush privileges")
+    dbh.close
+    
+    # `mysql -u#{self.username} -p#{self.password} -D #{self.database} < src/t3lib/stddb/tables.sql`
+    
+    # sql_list = `find #{Dir.getwd}/src/typo3/sysext -name '*.sql' -print -follow`.to_a
+    # 
+    # tmp_extension_list = @extensions
+    # tmp_extension_list << "cms" # plus special cases
+    # 
+    # sql = sql_list.find_all do |i| 
+    #   ext_key = i.match(/\/src\/typo3\/sysext\/(.*)\//)[1]
+    #   tmp_extension_list.include?(ext_key)
+    # end
+    # 
+    # sql.each do |f| 
+    #   puts "mysql -u#{self.username} -p#{self.password} -D #{self.database} < #{f}" 
+    #   # `mysql -u#{self.username} -p#{self.password} -D #{self.database} < #{f}` 
+    # end
+    
   end
   
+  def extension_list
+    @extensions.join(",")
+  end
+
   private
   
   def localconf
@@ -197,16 +231,16 @@ $TYPO3_CONF_VARS['SYS']['encryptionKey'] = '#{Digest::MD5.hexdigest(self.install
 
 ## TODO make these more dynamic and templateable
 
-$TYPO3_CONF_VARS['EXT']['extList'] = 'tsconfig_help,context_help,extra_page_cm_options,impexp,sys_note,tstemplate,tstemplate_ceditor,tstemplate_info,tstemplate_objbrowser,tstemplate_analyzer,func_wizards,wizard_crpages,wizard_sortpages,lowlevel,install,belog,beuser,aboutmodules,setup,taskcenter,info_pagetsconfig,viewpage,rtehtmlarea,css_styled_content,t3skin';
+$TYPO3_CONF_VARS['EXT']['extList'] = '#{self.extension_list}';
 
-$TYPO3_CONF_VARS['SYS']['compat_version'] = '4.1';
+$TYPO3_CONF_VARS['SYS']['compat_version'] = '4.2';
 
 ## ImageMagick/GraphicsMagick Configuration
 
 $TYPO3_CONF_VARS['GFX']['im_combine_filename'] = 'composite';
 $TYPO3_CONF_VARS['GFX']["im_path"] = '/usr/local/bin/';
-$TYPO3_CONF_VARS['GFX']['im_version_5'] = 'im5';
 $TYPO3_CONF_VARS['GFX']["im_path_lzw"] = '/usr/local/bin/';
+$TYPO3_CONF_VARS['GFX']['im_version_5'] = 'gm';
 $TYPO3_CONF_VARS['GFX']['TTFdpi'] = '96';
 $TYPO3_CONF_VARS['SYS']['setMemoryLimit'] = '256';
 $TYPO3_CONF_VARS['GFX']['gdlib_2'] = '1';
@@ -214,7 +248,7 @@ $TYPO3_CONF_VARS['GFX']['im_imvMaskState'] = '0';
 $TYPO3_CONF_VARS['GFX']['im_v5effects'] = '0';
 $TYPO3_CONF_VARS['GFX']['im_negate_mask'] = '1';
 $TYPO3_CONF_VARS['GFX']['im_no_effects'] = '0';
-
+$TYPO3_CONF_VARS['FE']['disableNoCacheParameter'] = '0';
 
 ## INSTALL SCRIPT EDIT POINT TOKEN - all lines after this points may be changed by the install script!
 
