@@ -52,6 +52,12 @@ class TYPO3Installer < Thor
     puts new_site.details
   end
   
+  desc "generate", "Generate an extension based on -t [template] with extension key -k [key]"
+  method_options :template => :required, :key => :required
+  def generate    
+    puts "Generating #{options[:key]} from template #{options[:template]}"
+  end
+  
   desc "config", "show current site config"
   def config
     if current_directory_is_typo3_install?
