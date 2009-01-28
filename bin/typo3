@@ -18,7 +18,7 @@ CONFIG = {
 class TYPO3Installer < Thor
 
   desc "install [VERSION]", "install latest version of TYPO3, optionally select a specific version to install"
-  method_options :version => :optional, :nosource => true, :nodummy => true, :dryrun => true
+  method_options :version => :optional, :nosource => true, :nodummy => true, :dryrun => true, :repo => true
   def install(version = 'latest')
     new_site = Typo3Site.new
         
@@ -31,6 +31,16 @@ class TYPO3Installer < Thor
       end
 
       unless options.nodummy?
+        if options.repo?
+          # set up repository structure
+          dir_structure = %w{src assets db doc util vendor vendorsrc}
+          
+          dir_structure.each do |f|
+            FileUtils.mkdir_p "#{FileUtils.pwd}/#{new_site.project}/#{f}"   
+          end
+          FileUtils.chdir "#{new_site.project}"
+          FileUtils.touch %w{README GLOSSARY BUILDING}
+        end
         install_latest_dummy
         new_site.generate_localconf
         new_site.setup_database
@@ -64,6 +74,7 @@ class TYPO3Installer < Thor
   def install_latest_dummy
     latest_dummy  = @dummy_list.last[0]
     `curl #{typo3_locations[:heanet_mirror]}#{latest_dummy} > #{latest_dummy}`
+    `rm -rf src`
     `tar -zxvf #{latest_dummy} && mv #{latest_dummy.sub(".tar.gz","")} src && rm #{latest_dummy}`
     `rm src/typo3_src`
     `ln -s /usr/local/typo3/latest src/typo3_src`
