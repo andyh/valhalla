@@ -56,6 +56,8 @@ class TYPO3Installer < Thor
   method_options :template => :required, :key => :required
   def generate    
     puts "Generating #{options[:key]} from template #{options[:template]}"
+    extension = Installer.new(options[:template], options[:key])
+    extension.build
   end
   
   desc "config", "show current site config"
