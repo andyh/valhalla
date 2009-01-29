@@ -188,28 +188,23 @@ class Typo3Site
     socket = `locate -l 1 mysql.sock`.to_s.strip
     
     dbh = Mysql.real_connect("localhost","root","","",port,socket)
-    dbh.query("create database #{self.database}")
+    dbh.query("create database #{self.database} CHARACTER SET 'utf8'")
     dbh.query("GRANT ALL ON #{self.database}.* TO '#{self.username}'@'localhost'")
     dbh.query("SET PASSWORD FOR '#{self.username}'@'localhost' = PASSWORD('#{self.password}')")
     dbh.query("flush privileges")
     dbh.close
-    
-    # `mysql -u#{self.username} -p#{self.password} -D #{self.database} < src/t3lib/stddb/tables.sql`
-    
-    # sql_list = `find #{Dir.getwd}/src/typo3/sysext -name '*.sql' -print -follow`.to_a
-    # 
-    # tmp_extension_list = @extensions
-    # tmp_extension_list << "cms" # plus special cases
-    # 
-    # sql = sql_list.find_all do |i| 
-    #   ext_key = i.match(/\/src\/typo3\/sysext\/(.*)\//)[1]
-    #   tmp_extension_list.include?(ext_key)
-    # end
-    # 
-    # sql.each do |f| 
-    #   puts "mysql -u#{self.username} -p#{self.password} -D #{self.database} < #{f}" 
-    #   # `mysql -u#{self.username} -p#{self.password} -D #{self.database} < #{f}` 
-    # end
+
+    # Form from Install Tool which does import
+    # <form action="index.php?TYPO3_INSTALL[type]=database&mode=123&step=3#bottom" method="post">
+    # <input type="hidden" name="TYPO3_INSTALL[database_type]" value="import">
+    # <input type="hidden" name="TYPO3_INSTALL[database_import_all]" value=1> 
+    # <input type="hidden" name="step" value=""> 
+    # <input type="hidden" name="goto_step" value="go"> 
+    # <select name="TYPO3_INSTALL[database_type]">
+    # <option value="import|CURRENT_TABLES+STATIC">Create default database tables</option>
+    # </select>
+    # <input type="submit" value="Import database">
+    # Returns HTML, look for "You're done!" for successful confirmation
     
   end
   
@@ -257,6 +252,10 @@ $TYPO3_CONF_VARS['GFX']['im_v5effects'] = '0';
 $TYPO3_CONF_VARS['GFX']['im_negate_mask'] = '1';
 $TYPO3_CONF_VARS['GFX']['im_no_effects'] = '0';
 $TYPO3_CONF_VARS['FE']['disableNoCacheParameter'] = '0';
+
+/ For backend charset
+$TYPO3_CONF_VARS['BE']['forceCharset'] = 'utf-8';
+$TYPO3_CONF_VARS['SYS']['setDBinit'] = 'SET NAMES utf8;';
 
 ## INSTALL SCRIPT EDIT POINT TOKEN - all lines after this points may be changed by the install script!
 
