@@ -9,7 +9,7 @@ class Installer
   
   def build
     if found_location = template_location_contains(@template_name)
-      puts "Would be building #{found_location}"
+      puts "Building #{found_location}"
       require "#{found_location}"
       include_name = @template_name.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }
       instance_eval "extend #{include_name}"
@@ -18,12 +18,19 @@ class Installer
           fl.exclude(found_location+'.rb')
       end
       
-      # puts "In location #{FileUtils.pwd}"
+      destfilelist = filelist.clone
+      
       destination_base = FileUtils.pwd
       source_base = found_location.sub("/#{@template_name}","")
-      # puts "Source Base:"+source_base
-      filelist.each do |src|
-        if src[-4..-1]==".erb"
+
+      mappings.each_pair do |k,v|
+        out = eval(v)
+        destfilelist.sub!(k,out)
+      end
+      destfilelist.sub!(source_base,destination_base)
+      
+      filelist.each_index do |src|        
+        if filelist[src][-4..-1]==".erb"
           
           # TODO sort out where to put this lot for access in erb templates
           ext_key = @extension_key
@@ -31,18 +38,17 @@ class Installer
           generate_md5_values = "md5 stuff"
           
           eruby = Erubis::Eruby.new
-          input = File.read(src)
+          input = File.read(filelist[src])
           output   = eruby.convert(input)
-          new_filepath = destination_base+src.gsub(source_base,"").gsub(".erb","")
-          puts new_filepath
+          new_filepath = destfilelist[src].gsub(".erb","")
           File.open(new_filepath,"w") do |fe|
-            fe.write(eval output)
+            fe.write(eval(output))
           end
         else
-          if File.directory?(src)
-            FileUtils.mkdir destination_base+src.sub(source_base,"")
-          else
-            FileUtils.copy src, destination_base+src.sub(source_base,"")        
+          if File.directory?(filelist[src])
+            FileUtils.mkdir destfilelist[src]
+          else            
+            FileUtils.copy filelist[src], destfilelist[src]
           end
         end        
       end       
