@@ -253,7 +253,7 @@ $TYPO3_CONF_VARS['GFX']['im_negate_mask'] = '1';
 $TYPO3_CONF_VARS['GFX']['im_no_effects'] = '0';
 $TYPO3_CONF_VARS['FE']['disableNoCacheParameter'] = '0';
 
-/ For backend charset
+// For backend charset
 $TYPO3_CONF_VARS['BE']['forceCharset'] = 'utf-8';
 $TYPO3_CONF_VARS['SYS']['setDBinit'] = 'SET NAMES utf8;';
 
