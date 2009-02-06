@@ -35,7 +35,7 @@ class Installer
           # TODO sort out where to put this lot for access in erb templates
           ext_key = @extension_key
           project = "test project"
-          generate_md5_values = "md5 stuff"
+          generate_md5_values = "// md5 stuff"
           
           eruby = Erubis::Eruby.new
           input = File.read(filelist[src])
