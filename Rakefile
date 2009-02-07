@@ -14,6 +14,10 @@ begin
     s.authors = ["Andy Henson"]
     s.default_executable = %q{typo3}
     s.executables = ["typo3"]
+    s.add_dependency 'erubis', '>= 2.6.2'
+    s.add_dependency 'rake', '>= 0.8.3'
+    s.add_dependency 'mysql', '>= 2.7'
+    s.add_dependency 'wycats-thor', '>= 0.9.8'
   end
 rescue LoadError
   puts "Jeweler not available. Install it with: sudo gem install technicalpickles-jeweler -s http://gems.github.com"
