@@ -1,4 +1,4 @@
-require "/Users/andy/rubydev/valhalla/lib/typo3/installer"
+require "typo3/installer"
 
 class Typo3
   attr_reader :sitename,:username, :password, :host, :dbname, :install_password

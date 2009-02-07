@@ -8,7 +8,9 @@ require "mysql"
 require "thor"
 require "open-uri"
 require "yaml"
-require "/Users/andy/rubydev/valhalla/lib/typo3"
+$:.unshift File.join(File.dirname(__FILE__), '..', 'lib')
+require "valhalla"
+
 
 CONFIG = {
   :webuser_group  => "_www",
